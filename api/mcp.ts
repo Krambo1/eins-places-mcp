@@ -42,8 +42,26 @@ export default async function handler(
     return;
   }
 
-  const auth = req.headers.authorization ?? "";
-  if (auth !== `Bearer ${expected}`) {
+  // Accept the token either via the standard Authorization: Bearer header,
+  // or via a `?token=` query parameter populated by the /mcp/:token rewrite.
+  //
+  // The query-param path exists because the claude.ai custom-connector UI only
+  // exposes OAuth fields, no Bearer field. Putting the secret in the URL is
+  // the same security posture as a Bearer header for a single-tenant server.
+  const headerAuth = req.headers.authorization ?? "";
+  const headerToken = headerAuth.startsWith("Bearer ")
+    ? headerAuth.slice("Bearer ".length)
+    : null;
+
+  let queryToken: string | null = null;
+  try {
+    const url = new URL(req.url ?? "/", "http://placeholder");
+    queryToken = url.searchParams.get("token");
+  } catch {
+    // ignore — leaves queryToken null
+  }
+
+  if (headerToken !== expected && queryToken !== expected) {
     res.statusCode = 401;
     res.setHeader("Content-Type", "application/json");
     res.setHeader("WWW-Authenticate", "Bearer");
