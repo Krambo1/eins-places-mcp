@@ -5,7 +5,6 @@
   "description": "MCP server that wraps Google Places API (New) for the EINS Outreach Bot.",
   "type": "module",
   "scripts": {
-    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "dev": "vercel dev"
   },
