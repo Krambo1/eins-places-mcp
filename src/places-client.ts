@@ -125,6 +125,88 @@ export async function textSearch(
   }));
 }
 
+export interface GeoSearchResult {
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  primary_type?: string;
+}
+
+/**
+ * Text Search (New), biased to one point of a rank-tracking grid.
+ *
+ * Used by places_rank_grid: SAME textQuery run from N different points, to
+ * approximate what a patient searching from different spots in the
+ * neighbourhood sees. `locationBias.circle` nudges ranking toward that area
+ * WITHOUT restricting results to it (Text Search has no `locationRestriction`
+ * circle option the way Nearby Search does) — a strong nearby match outside
+ * the circle can still outrank a weak one inside it. That is the closest
+ * correct equivalent to "search from this point" that the API exposes.
+ * `rankPreference: "RELEVANCE"` is Text Search's default and the only
+ * sensible choice with a text query (DISTANCE is for un-worded proximity
+ * search and would defeat the point of a *relevance* rank-grid).
+ *
+ * FieldMask kept to exactly 4 fields (Pro SKU, 5,000 free/month, then
+ * $32/1k) — no rating fields, no types/businessStatus. N grid points = N
+ * Text Search Pro calls; the tool wrapper reports N as `stats.calls`.
+ */
+export async function textSearchGeo(
+  query: string,
+  point: { lat: number; lng: number },
+  radiusM: number,
+  options: { languageCode?: string; regionCode?: string } = {},
+): Promise<GeoSearchResult[]> {
+  const fieldMask = [
+    "places.id",
+    "places.displayName",
+    "places.formattedAddress",
+    "places.primaryType",
+  ].join(",");
+
+  const res = await fetch(`${PLACES_BASE}/places:searchText`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey(),
+      "X-Goog-FieldMask": fieldMask,
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      locationBias: {
+        circle: {
+          center: { latitude: point.lat, longitude: point.lng },
+          radius: radiusM,
+        },
+      },
+      rankPreference: "RELEVANCE",
+      pageSize: 20,
+      languageCode: options.languageCode ?? "de",
+      regionCode: options.regionCode ?? "DE",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Places textSearch (geo) failed: ${res.status} ${body}`);
+  }
+
+  const json = (await res.json()) as {
+    places?: Array<{
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      primaryType?: string;
+    }>;
+  };
+
+  return (json.places ?? []).map((p) => ({
+    place_id: p.id,
+    name: p.displayName?.text ?? "",
+    formatted_address: p.formattedAddress ?? "",
+    primary_type: p.primaryType,
+  }));
+}
+
 export interface NearbySearchResult {
   place_id: string;
   name: string;

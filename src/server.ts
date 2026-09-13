@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerPlacesSearch } from "./tools/places-search.js";
 import { registerPlaceDetails } from "./tools/place-details.js";
 import { registerPlacesNearbyGrid } from "./tools/places-nearby-grid.js";
+import { registerPlacesRankGrid } from "./tools/places-rank-grid.js";
 
 /**
  * Build a fresh MCP server instance with the EINS Places tools registered.
@@ -13,12 +14,13 @@ import { registerPlacesNearbyGrid } from "./tools/places-nearby-grid.js";
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "eins-places-mcp",
-    version: "0.2.0",
+    version: "0.3.0",
   });
 
   registerPlacesSearch(server);
   registerPlaceDetails(server);
   registerPlacesNearbyGrid(server);
+  registerPlacesRankGrid(server);
 
   return server;
 }

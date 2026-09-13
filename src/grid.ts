@@ -1,5 +1,6 @@
 /**
- * Grid sweep logic for places_nearby_grid (v0.2.0, Outreach v3 Step 4).
+ * Grid sweep logic for places_nearby_grid (v0.2.0, Outreach v3 Step 4), plus
+ * (v0.3.0) the pure square-lattice geometry for places_rank_grid.
  *
  * Pure + deterministic: the Google call is injected as `searchFn`, so this
  * module is unit-testable without network. The tool wrapper in
@@ -93,6 +94,38 @@ export function offsetPoint(
   const dLng =
     dxMeters / (METERS_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180));
   return { lat: lat + dLat, lng: lng + dLng };
+}
+
+/**
+ * Build the coordinates of a square grid_size x grid_size lattice around a
+ * center point, for places_rank_grid. `zeile` (row) increases southward,
+ * `spalte` (column) increases eastward; the center point sits at
+ * `(mid, mid)` since grid_size is always odd. Uses the same flat-earth
+ * meters->degrees conversion as offsetPoint (fine at neighbourhood scale).
+ */
+export interface RankGridPoint {
+  zeile: number;
+  spalte: number;
+  lat: number;
+  lng: number;
+}
+
+export function buildRankGridPoints(
+  center: { lat: number; lng: number },
+  gridSize: number,
+  spacingM: number,
+): RankGridPoint[] {
+  const mid = (gridSize - 1) / 2;
+  const points: RankGridPoint[] = [];
+  for (let zeile = 0; zeile < gridSize; zeile++) {
+    for (let spalte = 0; spalte < gridSize; spalte++) {
+      const dx = (spalte - mid) * spacingM;
+      const dy = (mid - zeile) * spacingM; // row 0 = north, so invert for offsetPoint's +dy=north
+      const { lat, lng } = offsetPoint(center.lat, center.lng, dx, dy);
+      points.push({ zeile, spalte, lat, lng });
+    }
+  }
+  return points;
 }
 
 /** The 4 diagonal child circles of a saturated parent. */

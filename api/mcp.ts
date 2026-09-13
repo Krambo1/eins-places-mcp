@@ -79,7 +79,12 @@ export default async function handler(
       JSON.stringify({
         name: "eins-places-mcp",
         status: "ok",
-        tools: ["places_search", "place_details", "places_nearby_grid"],
+        tools: [
+          "places_search",
+          "place_details",
+          "places_nearby_grid",
+          "places_rank_grid",
+        ],
       }),
     );
     return;

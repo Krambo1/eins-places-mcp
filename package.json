@@ -1,13 +1,13 @@
 {
   "name": "eins-places-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "MCP server that wraps Google Places API (New) for the EINS Outreach Bot.",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "dev": "vercel dev",
-    "test": "tsx --test src/grid.test.ts"
+    "test": "tsx --test src/grid.test.ts src/rank-grid.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
